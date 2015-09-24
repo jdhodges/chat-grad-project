@@ -3,19 +3,45 @@
     <head>
         <meta charset="utf-8">
         <title>Chat</title>
+        <link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+        <link rel="stylesheet" href="main.css">
+        <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/0.11.0/angular-material.min.css">
         <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.1/angular.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.1/angular-animate.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.1/angular-aria.min.js"></script>
+        <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/0.11.0/angular-material.min.css">
         <script src="js/main.js"></script>
     </head>
-    <body ng-controller="ChatController">
-        <a ng-show="!loggedIn" href="{{loginUri}}">Log in</a>
+    <body ng-controller="ChatController as chatCtrl">
+        <div class="log-in" ng-show="!loggedIn">
+        <!--<div class="log-in" ng-show="false">-->
+            <a  href="{{loginUri}}">
+                <button class="btn-primary btn-lg" href="{{loginUri}}">
+                    <span class="glyphicon glyphicon-log-in"></span>  Log In
+                </button>
+            </a>
+        </div>
         <section ng-show="loggedIn">
-            <p>Logged in as {{user.name}}.</p>
-            <h2>List of registered users</h2>
-            <ul>
-                <li ng-repeat="user in users">
-                    {{user.name}}
-                </li>
-            </ul>
+            <navbar></navbar>
+            <sidebar></sidebar>
+            <md-list ng-show="chatHasBeenOpened">
+                <md-subheader class="md-no-sticky">Conversation with {{toUser.name}}</md-subheader>
+                <div ng-repeat="message in activeConversation.messages">
+                    <md-list-item class="md-3-line">
+                        <img ng-src="{{chatCtrl.getUser(message.userId).avatarUrl}}" class="md-avatar" alt="user.name" />
+                        <div class="md-list-item-text" layout="column">
+                            <h3>{{chatCtrl.getUser(message.userId).name}}</h3>
+                            <h4 style="line-height: 1.2em">{{message.content}}</h4>
+                            <p class="timestamp">{{message.timestamp | date:'HH:mm dd/MM/yyyy'}}</p>
+                        </div>
+                    </md-list-item>
+                    <md-divider ></md-divider>
+                </div>
+                <form name="messageForm" ng-submit="chatCtrl.addMessage()">
+                    <input id="message-input" class="form-control" ng-model="newMessage.content"></input>
+                </form>
+            </md-list>
         </section>
     </body>
 </html>

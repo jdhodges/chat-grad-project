@@ -1,0 +1,16 @@
+<md-sidenav id="sidebar" md-component-id="left" class="md-sidenav-left md-whiteframe-z2">
+    <md-toolbar class="md-theme-indigo">
+        <h1 class="md-toolbar-tools">Users</h1>
+    </md-toolbar>
+    <div id="user-search">
+        <span id="search-icon" class="glyphicon glyphicon-search"></span><input type="text" class="form-control" id="usr" ng-model="searchText">
+    </div>
+    <md-divider></md-divider>
+    <nav class="navbar navbar-stacked navbar-fixed-left">
+        <ul class="nav navbar-stacked">
+            <li class="user-li" ng-repeat="listedUser in users | filter:{name:searchText}">
+                <a href="" ng-click="chatCtrl.initiateConversation(listedUser)"><img src="{{listedUser.avatarUrl}}" width="24" height="24"> {{listedUser.name}}</img></a>
+            </li>
+        </ul>
+    </nav>
+</md-sidenav>

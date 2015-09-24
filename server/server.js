@@ -1,4 +1,5 @@
 var express = require("express");
+var bodyParser = require("body-parser");
 var cookieParser = require("cookie-parser");
 
 module.exports = function(port, db, githubAuthoriser) {
@@ -6,8 +7,10 @@ module.exports = function(port, db, githubAuthoriser) {
 
     app.use(express.static("public"));
     app.use(cookieParser());
+    app.use(bodyParser.json());
 
     var users = db.collection("users");
+    var conversations = db.collection("conversations");
     var sessions = {};
 
     app.get("/oauth", function(req, res) {
@@ -35,7 +38,6 @@ module.exports = function(port, db, githubAuthoriser) {
             else {
                 res.sendStatus(400);
             }
-
         });
     });
 
@@ -82,6 +84,68 @@ module.exports = function(port, db, githubAuthoriser) {
                 }));
             } else {
                 res.sendStatus(500);
+            }
+        });
+    });
+
+    app.get("/api/conversation/:to", function(req, res) {
+        conversations.findOne({
+
+            participants: { $all: [req.session.user, req.params.to]}
+
+        }, function(err, result) {
+            if (err) {
+                res.sendStatus(500);
+                return;
+            }
+
+            if (result) {
+                res.send(result);
+            } else {
+                res.sendStatus(404);
+            }
+        });
+    });
+
+    app.post("/api/conversation/:to", function(req, res) {
+        var conversation = {};
+
+        var participants = [];
+        participants.push(req.session.user);
+        participants.push(req.params.to);
+        conversation.participants = participants;
+
+        conversations.insertOne(conversation, function(err, result) {
+            if (!err) {
+                res.sendStatus(201);
+            } else {
+                res.sendStatus(500);
+            }
+        });
+    });
+
+    app.post("/api/conversation/:to/msg", function(req, res) {
+        var message = req.body;
+        message.userId = req.session.user;
+        message.timestamp = Date.now();
+
+        conversations.updateOne({
+            $and : [
+                {participants: req.session.user},
+                {participants: req.params.to}
+            ]
+        },
+        {$push: {messages: message}},
+        function(err, result) {
+            if (err) {
+                res.sendStatus(500);
+                return;
+            }
+
+            if (result) {
+                res.sendStatus(201);
+            } else {
+                res.sendStatus(404);
             }
         });
     });

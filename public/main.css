@@ -1,0 +1,67 @@
+.ng-scope {
+    /*background: url(dark_embroidery.png);*/
+    width: 100%;
+    margin:0px auto;
+    font-family: 'Roboto', sans-serif;
+}
+
+.ng-scope .log-in {
+    position: fixed;
+    left: 47%;
+    top: 100px;
+}
+
+section {
+    /*color: white;*/
+}
+
+#navbar {
+    border-radius: 0;
+    margin-bottom: 0;
+}
+
+#sidebar {
+    top: 52px;
+}
+
+md-toolbar h1 {
+    background-color: rgba(16,108,200, 0.8);
+    color: rgba(255,255,255,0.87);
+}
+
+.user-li {
+    font-size: 16px;
+    vertical-align: sub;
+}
+
+#search-icon {
+    top: 25px;
+    margin-left: 15px;
+}
+
+#user-search .form-control {
+    margin: 15px;
+}
+
+#user-search {
+    display: flex;
+}
+
+md-divider {
+    color: lightgray;
+}
+
+md-list {
+    position: absolute;
+    left: 304px;
+    margin-left: 20px;
+    width: 700px;
+}
+md-list div .timestamp {
+    color: lightgray;
+    float: right;
+}
+
+#message-input {
+    margin-top: 15px;
+}
