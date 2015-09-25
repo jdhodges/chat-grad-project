@@ -9,7 +9,10 @@
     <nav class="navbar navbar-stacked navbar-fixed-left">
         <ul class="nav navbar-stacked">
             <li class="user-li" ng-repeat="listedUser in users | filter:{name:searchText}">
-                <a href="" ng-click="chatCtrl.initiateConversation(listedUser)"><img src="{{listedUser.avatarUrl}}" width="24" height="24"> {{listedUser.name}}</img></a>
+                <a href="" ng-click="chatCtrl.initiateConversation(listedUser)">
+                    <img src="{{listedUser.avatarUrl}}" width="24" height="24"> {{listedUser.name}}</img>
+                    <span ng-show="listedUser.showNotification" class="glyphicon glyphicon-envelope"></span>
+                </a>
             </li>
         </ul>
     </nav>

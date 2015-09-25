@@ -65,3 +65,8 @@ md-list div .timestamp {
 #message-input {
     margin-top: 15px;
 }
+
+.glyphicon-envelope {
+    float: right;
+    color: orangered;
+}

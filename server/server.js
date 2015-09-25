@@ -1,6 +1,7 @@
 var express = require("express");
 var bodyParser = require("body-parser");
 var cookieParser = require("cookie-parser");
+var ObjectID = require("mongodb").ObjectID;
 
 module.exports = function(port, db, githubAuthoriser) {
     var app = express();
@@ -12,6 +13,8 @@ module.exports = function(port, db, githubAuthoriser) {
     var users = db.collection("users");
     var conversations = db.collection("conversations");
     var sessions = {};
+    var userList = [];
+    var self = this;
 
     app.get("/oauth", function(req, res) {
         githubAuthoriser.authorise(req, function(githubUser, token) {
@@ -75,9 +78,14 @@ module.exports = function(port, db, githubAuthoriser) {
     app.get("/api/users", function(req, res) {
         users.find().toArray(function(err, docs) {
             if (!err) {
+
+                docs.forEach(function(user) {
+                    userList[user._id] = [];
+                });
+
                 res.json(docs.map(function(user) {
                     return {
-                        id: user._id,
+                        _id: user._id,
                         name: user.name,
                         avatarUrl: user.avatarUrl
                     };
@@ -88,10 +96,48 @@ module.exports = function(port, db, githubAuthoriser) {
         });
     });
 
-    app.get("/api/conversation/:to", function(req, res) {
+    // Get conversation. Return it if it exists, create one if it doesn't.
+    app.post("/api/conversation", function(req, res) {
+        var conversation = {};
+        var participants = req.body;
+
         conversations.findOne({
 
-            participants: { $all: [req.session.user, req.params.to]}
+            $and: [
+                {participants: { $all: participants}},
+                {participants: { $size: participants.length}}
+            ]
+
+        }, function(err, result) {
+            if (!err) {
+                if (result) {
+                    res.send(result);
+                } else {
+                    conversation.participants = participants;
+                    conversation.messages = [];
+
+                    conversations.insertOne(conversation, function(err, result) {
+                        if (!err) {
+                            res.send(result.ops[0]);
+                        } else {
+                            res.sendStatus(500);
+                        }
+                    });
+                }
+            } else {
+                res.sendStatus(500);
+            }
+        });
+    });
+
+    // Check user is participating and get conversation with conversation id. Used when refreshing the conversation.
+    app.get("/api/conversation/:id", function(req, res) {
+        conversations.findOne({
+
+            $and : [
+                {participants: req.session.user},
+                {_id:  ObjectID(req.params.id)}
+            ]
 
         }, function(err, result) {
             if (err) {
@@ -107,33 +153,17 @@ module.exports = function(port, db, githubAuthoriser) {
         });
     });
 
-    app.post("/api/conversation/:to", function(req, res) {
-        var conversation = {};
-
-        var participants = [];
-        participants.push(req.session.user);
-        participants.push(req.params.to);
-        conversation.participants = participants;
-
-        conversations.insertOne(conversation, function(err, result) {
-            if (!err) {
-                res.sendStatus(201);
-            } else {
-                res.sendStatus(500);
-            }
-        });
-    });
-
-    app.post("/api/conversation/:to/msg", function(req, res) {
+    // Check user is participating and post message to conversation.
+    app.post("/api/conversation/:id", function(req, res) {
         var message = req.body;
         message.userId = req.session.user;
         message.timestamp = Date.now();
 
         conversations.updateOne({
-            $and : [
-                {participants: req.session.user},
-                {participants: req.params.to}
-            ]
+                $and : [
+                    {participants: req.session.user},
+                    {_id:  ObjectID(req.params.id)}
+                ]
         },
         {$push: {messages: message}},
         function(err, result) {
@@ -144,10 +174,44 @@ module.exports = function(port, db, githubAuthoriser) {
 
             if (result) {
                 res.sendStatus(201);
+                // Message posted successfully. Now ensure participants are notified.
+                self.notifyParticipants(req.session.user, req.params.id);
             } else {
                 res.sendStatus(404);
             }
         });
+    });
+
+    // Notify all participants (excluding the current user) of the given conversation.
+    this.notifyParticipants = function(userId, conversationId) {
+        conversations.findOne({
+
+                _id:  ObjectID(conversationId)
+
+        }, function(err, result) {
+            if (err) {
+
+                return;
+            }
+
+            if (result) {
+                result.participants.forEach(function(participant) {
+                    //if (userId !== participant) {
+                        userList[participant].push(conversationId);
+                    //}
+                });
+            } else {
+
+            }
+        });
+    };
+
+    // Return the conversation ids of any conversations that have changed.
+    app.get("/api/notifications", function(req, res) {
+
+        res.send(userList[req.session.user]);
+        userList[req.session.user] = [];
+
     });
 
     return app.listen(port);

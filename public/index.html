@@ -11,6 +11,7 @@
         <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.1/angular-animate.min.js"></script>
         <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.1/angular-aria.min.js"></script>
         <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/0.11.0/angular-material.min.css">
+        <script src="http://cdnjs.cloudflare.com/ajax/libs/angular-poller/0.3.3/angular-poller.js"></script>
         <script src="js/main.js"></script>
     </head>
     <body ng-controller="ChatController as chatCtrl">
@@ -26,12 +27,12 @@
             <navbar></navbar>
             <sidebar></sidebar>
             <md-list ng-show="chatHasBeenOpened">
-                <md-subheader class="md-no-sticky">Conversation with {{toUser.name}}</md-subheader>
+                <md-subheader class="md-no-sticky">Conversation with {{conversationWith.name}}</md-subheader>
                 <div ng-repeat="message in activeConversation.messages">
                     <md-list-item class="md-3-line">
-                        <img ng-src="{{chatCtrl.getUser(message.userId).avatarUrl}}" class="md-avatar" alt="user.name" />
+                        <img ng-src="{{chatCtrl.getUserById(message.userId).avatarUrl}}" class="md-avatar" alt="" />
                         <div class="md-list-item-text" layout="column">
-                            <h3>{{chatCtrl.getUser(message.userId).name}}</h3>
+                            <h3>{{chatCtrl.getUserById(message.userId).name}}</h3>
                             <h4 style="line-height: 1.2em">{{message.content}}</h4>
                             <p class="timestamp">{{message.timestamp | date:'HH:mm dd/MM/yyyy'}}</p>
                         </div>

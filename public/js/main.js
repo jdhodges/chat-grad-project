@@ -1,12 +1,12 @@
 (function() {
-    var app = angular.module("ChatApp", []);
+    var app = angular.module("ChatApp", ["emguo.poller"]);
 
-    app.controller("ChatController", function($scope, $http) {
+    app.controller("ChatController", function($scope, $http, poller) {
 
         $scope.loggedIn = false;
         $scope.chatHasBeenOpened = false;
+        $scope.conversationWith = {};
         $scope.activeConversation = {};
-        $scope.toUser = {};
         $scope.newMessage = {};
 
         var self = this;
@@ -16,6 +16,10 @@
             $scope.user = userResult.data;
             $http.get("/api/users").then(function(result) {
                 $scope.users = result.data;
+
+                $scope.users.forEach(function(user) {
+                    user.showNotification = false;
+                });
             });
         }, function() {
             $http.get("/api/oauth/uri").then(function(result) {
@@ -23,50 +27,77 @@
             });
         });
 
+        //var notificationPoller = poller.get("api/notifications", {
+        //     delay: 10000
+        //});
+        //
+        //notificationPoller.promise.then(null , null, function(result) {
+        //    var dirtyConversations = result.data;
+        //
+        //    if (dirtyConversations.length > 0) {
+        //        dirtyConversations.forEach(function(dirtyConversation) {
+        //            if ($scope.chatHasBeenOpened && $scope.activeConversation._id === dirtyConversation._id) {
+        //                // This conversation is already open, refresh it to see the new message(s).
+        //                self.getConversationById(dirtyConversation._id);
+        //            } else {
+        //                // This conversation is not open. Show the notification in the sidebar.
+        //                if (dirtyConversation.participants.length > 2) {
+        //                    // Group chat
+        //                } else {
+        //                    // Normal chat
+        //                    dirtyConversation.participants.forEach()
+        //                }
+        //            }
+        //        });
+        //    }
+        //});
+
         this.initiateConversation = function(toUser) {
-            self.openConversation(toUser, self.createConversation);
+            var participants = [];
+            participants.push($scope.user._id);
+
+            if ($scope.user._id !== toUser._id) {
+                participants.push(toUser._id);
+            }
+
+            $scope.conversationWith = toUser;
+
+            self.getConversation(participants);
         };
 
-        this.openConversation = function(toUser, callback) {
-            $http.get("/api/conversation/" + toUser.id).success(function(data, status) {
+        this.getConversation = function(participants) {
+            $http.post("/api/conversation", participants).success(function(data, status) {
                 $scope.chatHasBeenOpened = true;
-                $scope.toUser = toUser;
                 $scope.activeConversation = data;
             }).error(function(data, status) {
-                if (status === 404) {
-                    if (callback) {
-                        callback(toUser);
-                    }
-                }
+                $scope.conversationWith = {};
             });
         };
 
-        this.createConversation = function(toUser) {
-            $http.post("/api/conversation/" + toUser.id).success(function(data, status) {
-                self.openConversation(toUser);
+        this.getConversationById = function(conversationId) {
+            $http.get("api/conversation/" + conversationId).success(function(data, status) {
+                $scope.activeConversation = data;
             }).error(function(data, status) {
                 console.log(data);
             });
         };
 
         this.addMessage = function() {
-            $http.post("/api/conversation/" + $scope.toUser.id + "/msg", $scope.newMessage).success(function(data, status) {
+            $http.post("/api/conversation/" + $scope.activeConversation._id, $scope.newMessage).success(function(data, status) {
                 $scope.newMessage.content = "";
-                self.initiateConversation($scope.toUser);
+                self.getConversationById($scope.activeConversation._id);
             }).error(function(data, status) {
+                $scope.newMessage.user = {};
                 console.log(data);
             });
         };
 
-        this.getUser = function(userId) {
-            if ($scope.user._id === userId) {
-                return $scope.user;
-            }
-
-            if ($scope.toUser.id === userId) {
-                return $scope.toUser;
-            }
+        this.getUserById = function(userId) {
+            return $scope.users.filter(function(user) {
+                return user._id === userId;
+            })[0];
         };
+
     });
 
     app.directive("navbar", function() {
