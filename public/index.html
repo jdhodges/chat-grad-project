@@ -5,7 +5,9 @@
         <title>Chat</title>
         <link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
         <link rel="stylesheet" href="main.css">
+        <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
         <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+        <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
         <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/0.11.0/angular-material.min.css">
         <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.1/angular.min.js"></script>
         <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.1/angular-animate.min.js"></script>
@@ -14,20 +16,33 @@
         <script src="http://cdnjs.cloudflare.com/ajax/libs/angular-poller/0.3.3/angular-poller.js"></script>
         <script src="js/main.js"></script>
     </head>
+
     <body ng-controller="ChatController as chatCtrl">
+
         <div class="log-in" ng-show="!loggedIn">
-        <!--<div class="log-in" ng-show="false">-->
             <a  href="{{loginUri}}">
                 <button class="btn-primary btn-lg" href="{{loginUri}}">
                     <span class="glyphicon glyphicon-log-in"></span>  Log In
                 </button>
             </a>
         </div>
+
         <section ng-show="loggedIn">
+
             <navbar></navbar>
+
             <sidebar></sidebar>
+
             <md-list ng-show="chatHasBeenOpened">
-                <md-subheader class="md-no-sticky">Conversation with {{conversationWith.name}}</md-subheader>
+
+                <div class="conversation-header">
+                    <md-subheader class="md-no-sticky">Conversation with {{conversationWith.name}}
+                        <button ng-click="chatCtrl.clearConversation()" class="btn-primary btn-sm">
+                            <span class="glyphicon glyphicon-remove"></span> Clear
+                        </button>
+                    </md-subheader>
+                </div>
+
                 <div ng-repeat="message in activeConversation.messages">
                     <md-list-item class="md-3-line">
                         <img ng-src="{{chatCtrl.getUserById(message.userId).avatarUrl}}" class="md-avatar" alt="" />
@@ -39,10 +54,15 @@
                     </md-list-item>
                     <md-divider ></md-divider>
                 </div>
+
                 <form name="messageForm" ng-submit="chatCtrl.addMessage()">
                     <input id="message-input" class="form-control" ng-model="newMessage.content"></input>
                 </form>
+
             </md-list>
+
         </section>
+
     </body>
+
 </html>

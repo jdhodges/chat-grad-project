@@ -70,3 +70,32 @@ md-list div .timestamp {
     float: right;
     color: orangered;
 }
+
+.conversation-header {
+    height: 32px;
+}
+
+.conversation-header button {
+    float: right;
+}
+
+.groups-header {
+    background-color: #009688;
+    color: rgba(255,255,255,0.87);;
+}
+
+.checkbox {
+    padding-left: 15px;
+}
+
+#create-group-input {
+    display: inline-flex;
+}
+
+#create-group-input input {
+    width: 185px;
+}
+
+.btn-xs {
+    margin-left: 5px;
+}

@@ -2,18 +2,59 @@
     <md-toolbar class="md-theme-indigo">
         <h1 class="md-toolbar-tools">Users</h1>
     </md-toolbar>
+
     <div id="user-search">
         <span id="search-icon" class="glyphicon glyphicon-search"></span><input type="text" class="form-control" id="usr" ng-model="searchText">
     </div>
+
     <md-divider></md-divider>
-    <nav class="navbar navbar-stacked navbar-fixed-left">
+
+    <nav class="navbar navbar-stacked navbar-fixed-left" style="margin-bottom: 0">
         <ul class="nav navbar-stacked">
             <li class="user-li" ng-repeat="listedUser in users | filter:{name:searchText}">
-                <a href="" ng-click="chatCtrl.initiateConversation(listedUser)">
-                    <img src="{{listedUser.avatarUrl}}" width="24" height="24"> {{listedUser.name}}</img>
+
+                <a href="" ng-click="chatCtrl.userClicked(listedUser)">
+                    <input ng-show="showGroupNameInput" type="checkbox" style="vertical-align: middle" ng-model="listedUser.selectedForNewGroup" ng-disabled="listedUser._id === user._id">
+                    <img ng-show="showAvatars" src="{{listedUser.avatarUrl}}" width="24" height="24"> {{listedUser.name}}</img>
                     <span ng-show="listedUser.showNotification" class="glyphicon glyphicon-envelope"></span>
                 </a>
             </li>
         </ul>
     </nav>
+
+    <h1 class="md-toolbar-tools groups-header">Groups</h1>
+
+    <div id="user-search">
+        <span id="search-icon" class="glyphicon glyphicon-search"></span><input type="text" class="form-control" id="usr" ng-model="groupSearchText">
+    </div>
+
+    <md-divider></md-divider>
+
+    <nav class="navbar navbar-stacked navbar-fixed-left" style="margin-bottom: 0">
+        <ul class="nav navbar-stacked">
+            <li class="user-li" ng-repeat="listedGroup in groups | filter:{name:groupSearchText}">
+                <a href="" ng-click="chatCtrl.groupClicked(listedGroup)">
+                   {{listedGroup.name}}
+                    <span ng-show="listedGroup.showNotification" class="glyphicon glyphicon-envelope"></span>
+                </a>
+            </li>
+            <li class="user-li">
+                <a ng-show="!showGroupNameInput" href="" ng-click="showGroupNameInput=true">
+                    <div>
+                        <span class="glyphicon glyphicon-plus"></span> Create group
+                    </div>
+                </a>
+                <a ng-show="showGroupNameInput" href="" style="cursor: default">
+                    <form name="create-group-form">
+                        <div id="create-group-input">
+                            <input type="text" class="form-control" ng-model="groupNameText" placeholder="Group name">
+                            <button class="btn-success btn-xs" href="" ng-click="chatCtrl.createGroup()">OK</button>
+                            <button ng-click="showGroupNameInput=false" class="btn-danger btn-xs" href="">Cancel</span></button>
+                        </div>
+                    </form>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
 </md-sidenav>

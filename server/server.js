@@ -12,6 +12,7 @@ module.exports = function(port, db, githubAuthoriser) {
 
     var users = db.collection("users");
     var conversations = db.collection("conversations");
+    var groups = db.collection("groups");
     var sessions = {};
     var userList = [];
     var self = this;
@@ -195,10 +196,18 @@ module.exports = function(port, db, githubAuthoriser) {
             }
 
             if (result) {
+                var groupOrUserId = "";
+
                 result.participants.forEach(function(participant) {
-                    //if (userId !== participant) {
-                        userList[participant].push(conversationId);
-                    //}
+                    if (userId !== participant) {
+
+                        if (result.groupId) {
+                            groupOrUserId = result.groupId;
+                        } else {
+                            groupOrUserId = userId;
+                        }
+                        userList[participant].push({groupOrUserId: groupOrUserId, conversationId: conversationId});
+                    }
                 });
             } else {
 
@@ -212,6 +221,94 @@ module.exports = function(port, db, githubAuthoriser) {
         res.send(userList[req.session.user]);
         userList[req.session.user] = [];
 
+    });
+
+    // Clear the messages in the given conversation.
+    app.delete("/api/conversation/:id", function(req, res) {
+
+        conversations.updateOne({
+                $and : [
+                    {participants: req.session.user},
+                    {_id:  ObjectID(req.params.id)}
+                ]
+            },
+            {$set: {messages: []}},
+            function(err, result) {
+                if (err) {
+                    res.sendStatus(500);
+                    return;
+                }
+
+                if (result) {
+                    res.sendStatus(200);
+                    // Messages deleted successfully. Now ensure participants are notified.
+                    self.notifyParticipants(req.session.user, req.params.id);
+                } else {
+                    res.sendStatus(404);
+                }
+            });
+
+    });
+
+    // Get the list of groups the user is a member of.
+    app.get("/api/groups", function(req, res) {
+        groups.find({
+
+            members: req.session.user
+
+        }).toArray(function(err, docs) {
+            if (!err) {
+                res.send(docs);
+            } else {
+                res.sendStatus(500);
+            }
+        });
+    });
+
+    // Create a group
+    app.post("/api/groups", function(req, res) {
+        var newGroup = {};
+        newGroup.members = req.body.members;
+        newGroup.name = req.body.groupNameText;
+
+        groups.insertOne(newGroup, function(err, result) {
+            if (!err) {
+                res.send(result.ops[0]);
+            } else {
+                res.sendStatus(500);
+            }
+        });
+    });
+
+    // Get a group conversation
+    app.post("/api/groupConversation/:id", function(req, res) {
+        var conversation = {};
+
+        conversations.findOne({
+
+            groupId: req.params.id
+
+        }, function(err, result) {
+            if (!err) {
+                if (result) {
+                    res.send(result);
+                } else {
+                    conversation.groupId = req.params.id;
+                    conversation.participants = req.body;
+                    conversation.messages = [];
+
+                    conversations.insertOne(conversation, function(err, result) {
+                        if (!err) {
+                            res.send(result.ops[0]);
+                        } else {
+                            res.sendStatus(500);
+                        }
+                    });
+                }
+            } else {
+                res.sendStatus(500);
+            }
+        });
     });
 
     return app.listen(port);
