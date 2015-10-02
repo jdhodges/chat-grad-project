@@ -18,10 +18,10 @@
         <script src="js/main.js"></script>
     </head>
 
-    <body ng-controller="ChatController as chatCtrl">
+    <body class="body" ng-controller="ChatController as chatCtrl">
 
         <div class="log-in" ng-show="!loggedIn">
-            <a  href="{{loginUri}}">
+            <a  ng-href="{{loginUri}}">
                 <button class="btn-primary btn-lg" href="{{loginUri}}">
                     <span class="glyphicon glyphicon-log-in"></span>  Log In
                 </button>
@@ -30,14 +30,12 @@
 
         <section ng-show="loggedIn">
 
-            <navbar></navbar>
+            <navbar show-avatars="showAvatars" username="user.name"></navbar>
 
             <sidebar></sidebar>
 
             <conversation></conversation>
 
         </section>
-
     </body>
-
 </html>

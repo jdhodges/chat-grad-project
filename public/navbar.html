@@ -5,8 +5,8 @@
         </div>
         <div>
             <ul class="nav navbar-nav navbar-right">
-                <li><a href="" data-toggle="modal" data-target="#preferences-modal"><span class="glyphicon glyphicon-user"></span> Logged in as {{user.name}}</a></li>
-                <li><a href="/" ng-click="chatCtrl.logOut()"><span class="glyphicon glyphicon-log-out"></span> Log Out</a></li>
+                <li><a href="" data-toggle="modal" data-target="#preferences-modal"><span class="glyphicon glyphicon-user"></span> Logged in as {{username}}</a></li>
+                <li><a href="/" ng-click="NavbarController.logOut()"><span class="glyphicon glyphicon-log-out"></span> Log Out</a></li>
             </ul>
         </div>
     </div>
@@ -23,7 +23,7 @@
                 <label><input type="checkbox" value="" ng-model="showAvatars">Show user avatars</label>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal" ng-click="chatCtrl.clearFocus()">Close</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
             </div>
         </div>
 

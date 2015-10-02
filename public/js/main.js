@@ -137,6 +137,7 @@
 
         this.getConversation = function(participants) {
             $http.post("/api/conversation", participants).success(function(data, status) {
+                console.log("Hello");
                 $scope.chatHasBeenOpened = true;
                 $scope.activeConversation = data;
                 $scope.activeConversation.isGroupConversation = false;
@@ -184,10 +185,6 @@
             });
         };
 
-        this.logOut = function() {
-            document.cookie = "sessionToken=;expires=Thu, 01 Jan 1970 00:00:00 UTC"
-        };
-
         this.userClicked = function(user) {
             if ($scope.addUserMode) {
 
@@ -215,7 +212,7 @@
         };
 
         this.getGroupConversations = function() {
-            $http.get("/api/groupConversations").success(function(data, status) {
+            $http.get("/api/groupConversationsMdl").success(function(data, status) {
                 $scope.groupConversations = data;
 
                 $scope.groupConversations.forEach(function(groupConversation) {
@@ -241,7 +238,7 @@
                 }
             });
 
-            $http.post("/api/groupConversations", groupConversation).success(function(data, status) {
+            $http.post("/api/groupConversationsMdl", groupConversation).success(function(data, status) {
                 $scope.groupConversations.push(data);
                 $scope.groupNameText = "";
                 $scope.createGroupMode = false;
@@ -251,7 +248,7 @@
         };
 
         this.getGroupConversation = function(groupConversation) {
-            $http.get("/api/groupConversations/" + groupConversation._id).success(function(data, status) {
+            $http.get("/api/groupConversationsMdl/" + groupConversation._id).success(function(data, status) {
                 $scope.activeConversation = data;
                 $scope.chatHasBeenOpened = true;
                 $scope.conversationWith = groupConversation;
@@ -325,16 +322,23 @@
             });
         });
 
-
-
     });
-
 
     // Directives
     app.directive("navbar", function() {
         return {
             restrict: "E",
-            templateUrl: "../navbar.html"
+            templateUrl: "../navbar.html",
+            controller: function() {
+                this.logOut = function() {
+                    document.cookie = "sessionToken=;expires=Thu, 01 Jan 1970 00:00:00 UTC";
+                };
+            },
+            controllerAs: "NavbarController",
+            scope: {
+                showAvatars: "=",
+                username: "="
+            }
         }
     });
 
