@@ -1,0 +1,35 @@
+<md-list ng-show="chatHasBeenOpened">
+
+    <div class="conversation-header">
+        <md-subheader class="md-no-sticky">Conversation with {{conversationWith.name}}
+            <button ng-click="chatCtrl.clearConversation()" class="btn-primary btn-sm">
+                <span class="glyphicon glyphicon-remove"></span> Clear
+            </button>
+            <button ng-show="activeConversation.isGroupConversation" ng-click="chatCtrl.leaveCurrentGroup()" class="btn-warning btn-sm">
+                <span class="glyphicon glyphicon-minus"></span> Leave
+            </button>
+            <button ng-show="activeConversation.isGroupConversation && !addUserMode" ng-click="chatCtrl.enableAddUserMode()" class="btn-success btn-sm">
+                <span class="glyphicon glyphicon-plus"></span> Add User
+            </button>
+            <button ng-show="activeConversation.isGroupConversation && addUserMode" ng-click="chatCtrl.disableAddUserMode()" class="btn-danger btn-sm" href="">Cancel</span></button>
+            <button ng-show="activeConversation.isGroupConversation && addUserMode" class="btn-success btn-sm" href="" ng-click="chatCtrl.addUsersToGroupConversation()">OK</button>
+        </md-subheader>
+    </div>
+
+    <div ng-repeat="message in activeConversation.messages">
+        <md-list-item class="md-3-line">
+            <img ng-src="{{chatCtrl.getUserById(message.userId).avatarUrl}}" class="md-avatar" alt="" />
+            <div class="md-list-item-text" layout="column">
+                <h3>{{chatCtrl.getUserById(message.userId).name}}</h3>
+                <h4 style="line-height: 1.2em">{{message.content}}</h4>
+                <p class="timestamp">{{message.timestamp | date:'HH:mm dd/MM/yyyy'}}</p>
+            </div>
+        </md-list-item>
+        <md-divider ></md-divider>
+    </div>
+
+    <form name="messageForm" ng-submit="chatCtrl.addMessage()">
+        <input id="message-input" class="form-control" ng-model="newMessage.content"></input>
+    </form>
+
+</md-list>

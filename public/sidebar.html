@@ -14,7 +14,7 @@
             <li class="user-li" ng-repeat="listedUser in users | filter:{name:searchText}">
 
                 <a href="" ng-click="chatCtrl.userClicked(listedUser)">
-                    <input ng-show="showGroupNameInput" type="checkbox" style="vertical-align: middle" ng-model="listedUser.selectedForNewGroup" ng-disabled="listedUser._id === user._id">
+                    <input ng-show="createGroupMode || addUserMode" type="checkbox" style="vertical-align: middle" ng-model="listedUser.selected" ng-disabled="(listedUser._id === user._id) || (listedUser.disabled)">
                     <img ng-show="showAvatars" src="{{listedUser.avatarUrl}}" width="24" height="24"> {{listedUser.name}}</img>
                     <span ng-show="listedUser.showNotification" class="glyphicon glyphicon-envelope"></span>
                 </a>
@@ -32,24 +32,24 @@
 
     <nav class="navbar navbar-stacked navbar-fixed-left" style="margin-bottom: 0">
         <ul class="nav navbar-stacked">
-            <li class="user-li" ng-repeat="listedGroup in groups | filter:{name:groupSearchText}">
-                <a href="" ng-click="chatCtrl.groupClicked(listedGroup)">
-                   {{listedGroup.name}}
-                    <span ng-show="listedGroup.showNotification" class="glyphicon glyphicon-envelope"></span>
+            <li class="user-li" ng-repeat="listedGroupConversation in groupConversations | filter:{name:groupSearchText}">
+                <a href="" ng-click="chatCtrl.getGroupConversation(listedGroupConversation)">
+                   {{listedGroupConversation.name}} ({{listedGroupConversation.participants.length}})
+                    <span ng-show="listedGroupConversation.showNotification" class="glyphicon glyphicon-envelope"></span>
                 </a>
             </li>
             <li class="user-li">
-                <a ng-show="!showGroupNameInput" href="" ng-click="showGroupNameInput=true">
+                <a ng-show="!createGroupMode" href="" ng-click="chatCtrl.enableCreateGroupMode()">
                     <div>
                         <span class="glyphicon glyphicon-plus"></span> Create group
                     </div>
                 </a>
-                <a ng-show="showGroupNameInput" href="" style="cursor: default">
+                <a ng-show="createGroupMode" href="" style="cursor: default">
                     <form name="create-group-form">
                         <div id="create-group-input">
                             <input type="text" class="form-control" ng-model="groupNameText" placeholder="Group name">
-                            <button class="btn-success btn-xs" href="" ng-click="chatCtrl.createGroup()">OK</button>
-                            <button ng-click="showGroupNameInput=false" class="btn-danger btn-xs" href="">Cancel</span></button>
+                            <button class="btn-success btn-xs" href="" ng-click="chatCtrl.createGroupConversation()">OK</button>
+                            <button ng-click="createGroupMode=false" class="btn-danger btn-xs" href="">Cancel</span></button>
                         </div>
                     </form>
                 </a>

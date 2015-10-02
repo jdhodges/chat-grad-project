@@ -14,6 +14,7 @@
         <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.1/angular-aria.min.js"></script>
         <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/0.11.0/angular-material.min.css">
         <script src="http://cdnjs.cloudflare.com/ajax/libs/angular-poller/0.3.3/angular-poller.js"></script>
+        <script src="https://cdn.socket.io/socket.io-1.3.5.js"></script>
         <script src="js/main.js"></script>
     </head>
 
@@ -33,33 +34,7 @@
 
             <sidebar></sidebar>
 
-            <md-list ng-show="chatHasBeenOpened">
-
-                <div class="conversation-header">
-                    <md-subheader class="md-no-sticky">Conversation with {{conversationWith.name}}
-                        <button ng-click="chatCtrl.clearConversation()" class="btn-primary btn-sm">
-                            <span class="glyphicon glyphicon-remove"></span> Clear
-                        </button>
-                    </md-subheader>
-                </div>
-
-                <div ng-repeat="message in activeConversation.messages">
-                    <md-list-item class="md-3-line">
-                        <img ng-src="{{chatCtrl.getUserById(message.userId).avatarUrl}}" class="md-avatar" alt="" />
-                        <div class="md-list-item-text" layout="column">
-                            <h3>{{chatCtrl.getUserById(message.userId).name}}</h3>
-                            <h4 style="line-height: 1.2em">{{message.content}}</h4>
-                            <p class="timestamp">{{message.timestamp | date:'HH:mm dd/MM/yyyy'}}</p>
-                        </div>
-                    </md-list-item>
-                    <md-divider ></md-divider>
-                </div>
-
-                <form name="messageForm" ng-submit="chatCtrl.addMessage()">
-                    <input id="message-input" class="form-control" ng-model="newMessage.content"></input>
-                </form>
-
-            </md-list>
+            <conversation></conversation>
 
         </section>
 

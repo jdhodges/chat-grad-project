@@ -1,8 +1,7 @@
 (function() {
     var app = angular.module("ChatApp", ["emguo.poller"]);
 
-    app.controller("ChatController", function($scope, $http, poller) {
-
+    app.controller("ChatController", function($scope, $http) {
         $scope.loggedIn = false;
         $scope.chatHasBeenOpened = false;
         $scope.conversationWith = {};
@@ -11,76 +10,114 @@
         $scope.pendingNotifications = [];
         $scope.dropdown = {};
         $scope.showAvatars = true;
-        $scope.showGroupNameInput = false;
+        $scope.createGroupMode = false;
         $scope.groupNameText = "";
+        $scope.groupConversations = [];
+        $scope.activeConversation.isGroupConversation = false;
+        $scope.addUserMode = false;
 
         var self = this;
 
-        $http.get("/api/user").then(function(userResult) {
-            $scope.loggedIn = true;
-            $scope.user = userResult.data;
+        this.enableAddUserMode = function() {
+            if (!$scope.createGroupMode) {
+                $scope.addUserMode = true;
+
+                // Make sure current members are selected and disabled
+                $scope.users.forEach(function (user) {
+                    $scope.activeConversation.participants.forEach(function (participant) {
+                        if (user._id === participant) {
+                            user.selected = true;
+                            user.disabled = true;
+                        }
+                    });
+                });
+
+            } else {
+                alert("Please finish creating group first.")
+            }
+
+        };
+
+        this.addUsersToGroupConversation = function() {
+            var usersToAdd = [];
+
+            if ($scope.addUserMode) {
+                $scope.users.forEach(function(user) {
+                    if (user.selected && !user.disabled) {
+                        usersToAdd.push(user._id);
+                    }
+                });
+            }
+
+            if (usersToAdd.length > 0) {
+                $http.post("/api/groupConversation/add/" + $scope.activeConversation._id, usersToAdd).success(function (data, status) {
+                    self.getConversationById($scope.activeConversation._id);
+                }).error(function (data, status) {
+                    console.log(data);
+                });
+            }
+
+            $scope.addUserMode = false;
+        };
+
+        this.leaveCurrentGroup = function() {
+            $http.delete("/api/groupConversation/leave/" + $scope.activeConversation._id).success(function (data, status) {
+                $scope.chatHasBeenOpened = false;
+                $scope.conversationWith = {};
+                $scope.activeConversation = {};
+                $scope.newMessage = {};
+                $scope.createGroupMode = false;
+                $scope.groupNameText = "";
+                $scope.addUserMode = false;
+                $scope.user.selected = false;
+                $scope.user.disabled = false;
+                self.getGroupConversations();
+            }).error(function (data, status) {
+                console.log(data);
+            });
+        };
+
+        this.getUsers = function() {
             $http.get("/api/users").then(function(result) {
                 $scope.users = result.data;
 
                 $scope.users.forEach(function(user) {
                     user.showNotification = false;
                     if (user._id !== $scope.user._id) {
-                        user.selectedForNewGroup = false;
+                        user.selected = false;
                     } else {
-                        user.selectedForNewGroup = true;
+                        user.selected = true;
                     }
                 });
             });
-        }, function() {
-            $http.get("/api/oauth/uri").then(function(result) {
-                $scope.loginUri = result.data.uri;
+        };
+
+        this.disableAddUserMode = function() {
+            $scope.addUserMode = false;
+
+            self.getUsers();
+
+        };
+
+        this.setNotification = function(groupOrUser) {
+            var isGroupNotification = false;
+
+            $scope.groupConversations.forEach(function (groupConversation) {
+                if (groupConversation._id === groupOrUser.conversationId) {
+                    groupConversation.showNotification = true;
+                    isGroupNotification = true;
+                    $scope.$apply();
+                }
             });
-        });
 
-        var notificationPoller = poller.get("api/notifications", {
-             delay: 2000
-        });
-
-        notificationPoller.promise.then(null , null, function(result) {
-            var dirtyConversations = result.data;
-
-            if (dirtyConversations.length > 0) {
-                dirtyConversations.forEach(function(dirtyConversation) {
-                    if ($scope.chatHasBeenOpened && $scope.activeConversation._id === dirtyConversation.conversationId) {
-                        // This conversation is already open, refresh it to see the new message(s).
-                        self.getConversationById(dirtyConversation.conversationId);
-                    } else {
-                        // This conversation is not open. Show the notification in the sidebar.
-                        self.setNotification(dirtyConversation.groupOrUserId);
-                    }
-                });
-            }
-        });
-
-        this.setNotification = function(groupOrUserId) {
-            var isGroupNotification = true;
-
-            $scope.pendingNotifications.push(groupOrUserId);
-
-            if ($scope.users) {
+            if (!isGroupNotification) {
                 $scope.users.forEach(function (user) {
-                    $scope.pendingNotifications.forEach(function (pendingId) {
-                         if (user._id === pendingId) {
-                             user.showNotification = true;
-                             isGroupNotification = false;
-                         }
-                    });
-                });
-            }
-            // Another for each for groups!
-            $scope.groups.forEach(function (group) {
-                $scope.pendingNotifications.forEach(function (pendingId) {
-                    if (group._id === pendingId) {
-                        group.showNotification = true;
-                        isGroupNotification = false;
+                    if (user._id === groupOrUser.poster) {
+                        user.showNotification = true;
+                        $scope.$apply();
                     }
                 });
-            });
+            }
         };
 
         this.initiateConversation = function(toUser) {
@@ -102,6 +139,7 @@
             $http.post("/api/conversation", participants).success(function(data, status) {
                 $scope.chatHasBeenOpened = true;
                 $scope.activeConversation = data;
+                $scope.activeConversation.isGroupConversation = false;
             }).error(function(data, status) {
                 $scope.conversationWith = {};
             });
@@ -110,6 +148,13 @@
         this.getConversationById = function(conversationId) {
             $http.get("api/conversation/" + conversationId).success(function(data, status) {
                 $scope.activeConversation = data;
+
+                if ($scope.activeConversation.name) {
+                    $scope.activeConversation.isGroupConversation = true;
+                } else {
+                    $scope.activeConversation.isGroupConversation = false;
+                }
+
             }).error(function(data, status) {
                 console.log(data);
             });
@@ -144,10 +189,16 @@
         };
 
         this.userClicked = function(user) {
-            if (user._id !== $scope.user._id) {
-                if ($scope.showGroupNameInput) {
+            if ($scope.addUserMode) {
+
+                if (!user.disabled) {
+                    user.selected = !user.selected;
+                }
+
+            } else if (user._id !== $scope.user._id) {
+                if ($scope.createGroupMode) {
                     if (user._id !== $scope.user._id) {
-                        user.selectedForNewGroup = !user.selectedForNewGroup;
+                        user.selected = !user.selected;
                     }
                 } else {
                     self.initiateConversation(user);
@@ -155,57 +206,131 @@
             }
         };
 
-        this.getGroups = function() {
-            $http.get("/api/groups").success(function(data, status) {
-                $scope.groups = data;
+        this.enableCreateGroupMode = function() {
+            if (!$scope.addUserMode) {
+                $scope.createGroupMode = true;
+            } else {
+                alert("Please finish adding users.");
+            }
+        };
 
-                $scope.groups.forEach(function(group) {
-                    group.showNotification = false;
+        this.getGroupConversations = function() {
+            $http.get("/api/groupConversations").success(function(data, status) {
+                $scope.groupConversations = data;
+
+                $scope.groupConversations.forEach(function(groupConversation) {
+                    groupConversation.showNotification = false;
                 });
             }).error(function(data, status) {
                 console.log(data);
             });
         };
 
-        this.createGroup = function() {
-            var groupObj = {};
-            groupObj.groupNameText = $scope.groupNameText;
-            groupObj.members = [];
+        this.createGroupConversation = function() {
+            var groupConversation = {};
+            groupConversation.name = $scope.groupNameText;
+            groupConversation.participants = [];
 
             $scope.users.forEach(function(user) {
-                if (user.selectedForNewGroup) {
-                    groupObj.members.push(user._id);
+                if (user.selected) {
+                    groupConversation.participants.push(user._id);
 
                     if (user._id !== $scope.user._id) {
-                        user.selectedForNewGroup = false;
+                        user.selected = false;
                     }
                 }
             });
 
-            $http.post("/api/groups", groupObj).success(function(data, status) {
-                $scope.groups.push(data);
+            $http.post("/api/groupConversations", groupConversation).success(function(data, status) {
+                $scope.groupConversations.push(data);
                 $scope.groupNameText = "";
-                $scope.showGroupNameInput = false;
+                $scope.createGroupMode = false;
             }).error(function(data, status) {
                 console.log(data);
             });
         };
 
-        this.groupClicked = function(group) {
-            $http.post("/api/groupConversation/" + group._id, group.members).success(function(data, status) {
+        this.getGroupConversation = function(groupConversation) {
+            $http.get("/api/groupConversations/" + groupConversation._id).success(function(data, status) {
                 $scope.activeConversation = data;
                 $scope.chatHasBeenOpened = true;
-                $scope.conversationWith.name = group.name;
-                group.showNotification = false;
+                $scope.conversationWith = groupConversation;
+                groupConversation.showNotification = false;
+
+                $scope.activeConversation.isGroupConversation = true;
             }).error(function(data, status) {
                 console.log(data);
             });
-        }
+        };
 
-        self.getGroups();
+        this.setupUserSocket = function() {
+            $scope.socket = io.connect();
+
+            $scope.socket.on("connect", function(data) {
+                $scope.socket.emit("join", $scope.user._id);
+            });
+
+            $scope.socket.on("disconnect", function(data) {
+                $scope.socket.emit("disconnect", $scope.user._id);
+            });
+
+            $scope.socket.on("userUpdate", function() {
+                console.log("Users changed, refreshing");
+                self.getUsers();
+            });
+
+            $scope.socket.on("groupConversationCreated", function() {
+                console.log("Group conversation created, refreshing");
+                self.getGroupConversations();
+            });
+
+            $scope.socket.on("groupConversationUpdated", function(data) {
+                console.log("Group conversation updated, refreshing");
+                self.getGroupConversations();
+
+                if ($scope.chatHasBeenOpened && data === $scope.activeConversation._id) {
+                    self.getConversationById($scope.activeConversation._id);
+                }
+            });
+
+            $scope.socket.on("messagePosted", function(data) {
+                console.log("A message has been posted");
+                if ($scope.chatHasBeenOpened && data.conversationId === $scope.activeConversation._id) {
+                    self.getConversationById(data.conversationId);
+                } else {
+                    self.setNotification(data);
+                }
+            });
+
+            $scope.socket.on("conversationCleared", function(data) {
+                console.log("A conversation has been cleared");
+                if ($scope.chatHasBeenOpened && data.conversationId === $scope.activeConversation._id) {
+                    self.getConversationById(data.conversationId);
+                }
+            });
+        };
+
+        $http.get("/api/user").then(function(userResult) {
+            console.log("User logged in!");
+
+            $scope.loggedIn = true;
+            $scope.user = userResult.data;
+
+            self.setupUserSocket();
+            self.getUsers();
+            self.getGroupConversations();
+        }, function() {
+            $http.get("/api/oauth/uri").then(function(result) {
+                $scope.loginUri = result.data.uri;
+            });
+        });
+
+
 
     });
 
+
+    // Directives
     app.directive("navbar", function() {
         return {
             restrict: "E",
@@ -217,6 +342,13 @@
         return {
             restrict: "E",
             templateUrl: "../sidebar.html"
+        }
+    });
+
+    app.directive("conversation", function() {
+        return {
+            restrict: "E",
+            templateUrl: "../conversation.html"
         }
     });
 
